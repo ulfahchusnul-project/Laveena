@@ -1,0 +1,1 @@
+{"rewrites":[{"source":"/((?!icon-|apple-touch-icon|logo|manifest|sw\\.js).*)","destination":"/index.html"}]}

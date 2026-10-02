@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LAVEENA — The AI Music Community</title>
+<meta name="description" content="Temukan, dengarkan, dan bagikan musik buatan AI.">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--black:#000;--s1:#0a0a0a;--s2:#111;--s3:#171717;--red:#E60023;--red2:#FF1238;--white:#fff;--mute:#a7a7a7;--line:#242424}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#000;color:#fff;font-family:Sora,system-ui,sans-serif;font-size:15px}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--red2);outline-offset:2px}
+#app{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative}
+.screen{display:none;min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top) 20px 0}
+.screen.on{display:block}
+.center{display:flex;flex-direction:column;align-items:center}
+#splash{align-items:center;justify-content:space-between;padding:0 0 28px}
+#splash.on{display:flex}
+#splash .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+#splash img{width:min(70vw,300px);animation:rise .9s ease both}
+@keyframes rise{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.tag{text-align:center;color:#fff;font-size:13px;letter-spacing:.06em;line-height:1.8;max-width:300px}
+.pw{font-size:13px;color:#ddd}.pw b{color:#fff}
+/* auth */
+.auth{padding-top:calc(env(safe-area-inset-top) + 40px);padding-bottom:30px}
+.auth .logo{width:min(62vw,260px);margin:0 auto 6px;display:block}
+.field{display:flex;align-items:center;gap:12px;height:54px;border:1.5px solid var(--line);border-radius:999px;padding:0 18px;margin-top:14px;background:#000}
+.field:focus-within{border-color:var(--red)}
+.field input{flex:1;background:none;border:0;outline:0;min-width:0}
+.field input::placeholder{color:var(--mute)}
+.field svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;border-radius:999px;font-weight:600;margin-top:18px}
+.btn.red{background:var(--red)}.btn.red:active{background:var(--red2)}
+.btn.out{border:1.5px solid var(--red)}
+.btn[disabled]{opacity:.6}
+.link{color:var(--red);font-weight:600}
+.small{text-align:center;font-size:13px;margin-top:18px;color:#eee}
+.or{display:flex;align-items:center;gap:14px;margin-top:18px;font-size:13px}.or i{flex:1;height:1px;background:#333}
+.err{color:#ff6b7f;font-size:13px;margin-top:12px;text-align:center;min-height:18px}
+.hint{color:var(--mute);font-size:12px;margin:8px 0 0 18px}
+/* home */
+#main{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:10px;padding-top:calc(env(safe-area-inset-top) + 14px)}
+.top img{height:44px}.top .sp{flex:1}
+.ib{position:relative;width:42px;height:42px;display:grid;place-items:center}
+.ib svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
+.dot{position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:var(--red)}
+.av{width:44px;height:44px;border-radius:50%;background:var(--s3);border:2px solid var(--red);display:grid;place-items:center;font-weight:700;font-size:16px}
+.search{display:flex;align-items:center;gap:12px;height:50px;border-radius:999px;background:var(--s2);border:1px solid var(--line);padding:0 18px;margin-top:16px}
+.search svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:1.8}
+.search input{flex:1;background:none;border:0;outline:0}
+.search input::placeholder{color:var(--mute)}
+.hero{margin-top:18px;border:1px solid #3a0710;border-radius:22px;padding:22px 20px;background:radial-gradient(120% 140% at 100% 100%,#5a000f 0,#1a0004 45%,#050001 100%);display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.hero small{color:var(--red);font-size:12px;letter-spacing:.2em;font-weight:600}
+.hero h1{font-size:28px;line-height:1.15;margin:4px 0 8px;font-weight:700}
+.hero p{font-size:14px;line-height:1.5}
+.hero .btn{width:auto;height:44px;padding:0 20px;margin-top:16px;display:inline-flex}
+.hero img{width:104px;opacity:.95;flex:none}
+.cats{display:flex;gap:14px;overflow-x:auto;margin:22px -20px 0;padding:0 20px 4px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:none;width:68px;text-align:center;font-size:12.5px;color:#ddd;padding-bottom:10px;border-bottom:2px solid transparent}
+.cat span{display:grid;place-items:center;width:62px;height:62px;border-radius:50%;background:var(--s2);border:1px solid var(--line);margin:0 auto 8px}
+.cat svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.7}
+.cat.on{color:var(--red);border-color:var(--red)}.cat.on span{background:#2a0309;border-color:#4a0711}.cat.on svg{stroke:var(--red)}
+.sh{display:flex;justify-content:space-between;align-items:center;margin:22px 0 6px}
+.sh h2{font-size:21px}.sh button{font-size:13px;font-weight:600}
+.trk{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.cv{width:66px;height:66px;border-radius:12px;flex:none;border:1px solid var(--line)}
+.ti{flex:1;min-width:0}.ti b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti em{display:block;font-style:normal;color:var(--mute);font-size:13px;margin:2px 0 6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips span{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--s3);border:1px solid var(--line);color:#ddd}
+.play{width:46px;height:46px;border-radius:50%;background:var(--red);display:grid;place-items:center;flex:none}
+.play svg{width:20px;height:20px;fill:#fff;margin-left:2px}
+.more{width:28px;height:40px;flex:none;color:var(--mute);font-size:20px;line-height:1}
+.empty{padding:60px 10px;text-align:center;color:var(--mute);line-height:1.6}
+.empty b{display:block;color:#fff;font-size:18px;margin-bottom:6px}
+/* nav */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;background:#050505;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:5}
+nav button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#ddd;padding:4px 0}
+nav svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.7}
+nav button.on{color:var(--red)}nav button.on svg{fill:var(--red)}
+nav .plus{width:64px;height:64px;border-radius:50%;background:var(--red);margin:-26px auto 0;display:grid;place-items:center;border:4px solid #000;color:#fff}
+nav .plus svg{width:30px;height:30px;stroke-width:2.4;fill:none!important}
+#toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#1c1c1c;border:1px solid var(--line);padding:11px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:9;max-width:90%}
+#toast.on{opacity:1;transform:translateX(-50%)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<section id="splash" class="screen on">
+  <div class="mid"><img src="/logo.png" alt="LAVEENA"><p class="tag">Listen · AI · Voice · Exploration ·<br>Expression · Network · Artists</p></div>
+  <p class="pw">powered by <b>IdeA1</b></p>
+</section>
+
+<section id="login" class="screen auth">
+  <img class="logo" src="/logo.png" alt="LAVEENA">
+  <p class="tag" style="margin:0 auto 34px">Listen · AI · Voice · Exploration ·<br>Expression · Network · Artists</p>
+  <div class="field"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="lid" placeholder="Email atau Username" autocomplete="username" aria-label="Email atau Username"></div>
+  <div class="field"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="lpw" type="password" placeholder="Kata sandi" autocomplete="current-password" aria-label="Kata sandi"><button type="button" data-eye="lpw" aria-label="Tampilkan kata sandi"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+  <button class="btn red" id="bLogin">Masuk</button>
+  <p class="err" id="lerr" role="alert"></p>
+  <p class="small" style="margin-top:0"><button id="bForgot">Lupa kata sandi?</button></p>
+  <div class="or"><i></i>atau<i></i></div>
+  <button class="btn out" id="bGoogle"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.300 3-7.300zM12 22c2.700 0 5-.9 6.600-2.400l-3.200-2.500c-.9.600-2 1-3.400 1-2.600 0-4.800-1.800-5.600-4.100H3.100v2.600A10 10 0 0 0 12 22zM6.400 14c-.2-.6-.3-1.300-.3-2s.1-1.400.3-2V7.400H3.100a10 10 0 0 0 0 9.200zM12 5.900c1.500 0 2.800.5 3.800 1.500l2.800-2.800A10 10 0 0 0 3.100 7.400L6.400 10c.8-2.300 3-4.100 5.600-4.100z"/></svg>Lanjutkan dengan Google</button>
+  <p class="small">Belum punya akun? <button class="link" data-go="register">Daftar</button></p>
+</section>
+
+<section id="register" class="screen auth">
+  <img class="logo" src="/logo.png" alt="LAVEENA" style="width:min(48vw,200px)">
+  <h2 style="text-align:center;margin:10px 0 6px;font-size:22px">Buat akun</h2>
+  <div class="field"><input id="rname" placeholder="Nama tampilan" autocomplete="name" aria-label="Nama tampilan"></div>
+  <div class="field"><input id="runame" placeholder="Username" autocomplete="username" autocapitalize="none" aria-label="Username"></div>
+  <p class="hint">3–20 karakter: huruf kecil, angka, titik, garis bawah.</p>
+  <div class="field"><input id="rmail" type="email" placeholder="Email" autocomplete="email" aria-label="Email"></div>
+  <div class="field"><input id="rpw" type="password" placeholder="Kata sandi (min. 8 karakter)" autocomplete="new-password" aria-label="Kata sandi"><button type="button" data-eye="rpw" aria-label="Tampilkan kata sandi"><svg viewBox="0 0 24 24" width="20" height="20" stroke="#fff" fill="none" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+  <div class="field"><input id="rpw2" type="password" placeholder="Ulangi kata sandi" autocomplete="new-password" aria-label="Ulangi kata sandi"></div>
+  <button class="btn red" id="bReg">Daftar</button>
+  <p class="err" id="rerr" role="alert"></p>
+  <p class="small" style="margin-top:0">Sudah punya akun? <button class="link" data-go="login">Masuk</button></p>
+</section>
+
+<section id="main" class="screen">
+  <div class="top"><img src="/logo-mark.png" alt="LAVEENA" style="height:46px"><span class="sp"></span>
+    <button class="ib" id="bNotif" aria-label="Notifikasi"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7zM10 20a2 2 0 0 0 4 0"/></svg><i class="dot"></i></button>
+    <button class="av" id="avatar" aria-label="Profil">?</button></div>
+  <div id="view"></div>
+</section>
+
+<nav id="nav" style="display:none" aria-label="Navigasi utama">
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg>Beranda</button>
+  <button data-tab="explore"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.500 8.500-2 5-5 2 2-5z"/></svg>Jelajahi</button>
+  <button data-tab="create" aria-label="Create"><span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+  <button data-tab="library"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M10 16V9l5-1v7"/><circle cx="9" cy="16" r="1.500"/></svg>Koleksi</button>
+  <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profil</button>
+</nav>
+<div id="toast" role="status"></div>
+</div>
+
+<script>
+/* ===== KONFIGURASI (isi dengan milik Anda; anon key aman di frontend) ===== */
+const SUPABASE_URL = 'ISI_URL_SUPABASE_ANDA';
+const SUPABASE_ANON_KEY = 'ISI_ANON_KEY_ANDA';
+
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const ready = !SUPABASE_URL.startsWith('ISI_');
+const sb = ready ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let user = null, profile = null, tab = 'home';
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)}
+function show(id){$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));$('#nav').style.display=id==='main'?'grid':'none';scrollTo(0,0)}
+function msg(e){const m=(e&&e.message||'').toLowerCase();
+  if(m.includes('invalid login'))return'Email/username atau kata sandi salah.';
+  if(m.includes('already registered')||m.includes('duplicate'))return'Email atau username sudah dipakai.';
+  if(m.includes('network')||m.includes('fetch'))return'Koneksi bermasalah. Periksa internet Anda lalu coba lagi.';
+  if(m.includes('email not confirmed'))return'Email belum dikonfirmasi. Cek kotak masuk Anda.';
+  return'Terjadi kesalahan. Silakan coba lagi.'}
+function needCfg(el){if(ready)return false;$(el).textContent='Supabase belum dikonfigurasi di index.html.';return true}
+async function busy(b,fn){b.disabled=true;try{await fn()}finally{b.disabled=false}}
+
+/* ===== DATA DEMO (ganti dengan data Supabase pada Tahap 2) ===== */
+const DEMO=[
+ {t:'Echoes of Tomorrow',a:'NovaMind',tags:['AI Music','Electronic','Cinematic'],g:'#2a0008,#d0102a'},
+ {t:'Midnight Bloom',a:'LunaVerse',tags:['AI Music','Pop','Chill'],g:'#12040a,#c2183f'},
+ {t:'Digital Dreams',a:'Zenith',tags:['AI Music','Electronic','Ambient'],g:'#0a0a2a,#e60a5a'},
+ {t:'Lost in Pixels',a:'Skyline',tags:['AI Music','EDM','Dance'],g:'#3a0006,#ff1238'},
+ {t:'Better Days',a:'Aurora Deck',tags:['AI Music','Indie','Acoustic'],g:'#1a0a14,#ff6a4d'}];
+const I={fire:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-9z"/>',note:'<path d="M9 18V6l10-2v12"/><circle cx="6.500" cy="18" r="2.500"/><circle cx="16.500" cy="16" r="2.500"/>',star:'<path d="m12 3 2.800 5.800 6.200.9-4.500 4.400 1 6.200L12 17.300 6.500 20.300l1-6.200L3 9.700l6.200-.9z"/>',users:'<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6M18 8v6M15 11h6"/>',list:'<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',compass:'<circle cx="12" cy="12" r="9"/><path d="m15.500 8.500-2 5-5 2 2-5z"/>'};
+const CATS=[['Trending','fire'],['New','note'],['Popular','star'],['Creators','users'],['Playlists','list'],['Explore','compass']];
+
+function trackHTML(x){const[c1,c2]=x.g.split(',');return`<div class="trk"><div class="cv" style="background:linear-gradient(145deg,${c1},${c2})" role="img" aria-label="Sampul ${x.t}"></div><div class="ti"><b>${x.t}</b><em>${x.a}</em><div class="chips">${x.tags.map(t=>`<span>${t}</span>`).join('')}</div></div><button class="play" data-play="${x.t}" aria-label="Putar ${x.t}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button><button class="more" aria-label="Menu lainnya">⋮</button></div>`}
+
+function render(){const v=$('#view');
+ if(tab==='home'){v.innerHTML=`<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input placeholder="Cari lagu, artis, atau kreator..." aria-label="Cari" id="q"></label>
+ <div class="hero"><div><small>WELCOME TO</small><h1>LAVEENA</h1><p>Discover. Create. Share.<br>The AI Music Community</p><button class="btn red" data-tab-go="explore">Jelajahi Sekarang</button></div><img src="/logo-mark.png" alt=""></div>
+ <div class="cats">${CATS.map((c,i)=>`<button class="cat${i?'':' on'}"><span><svg viewBox="0 0 24 24">${I[c[1]]}</svg></span>${c[0]}</button>`).join('')}</div>
+ <div class="sh"><h2>Trending Tracks</h2><button class="link" data-tab-go="explore">Lihat semua</button></div>${DEMO.map(trackHTML).join('')}`;
+ $$('.cat').forEach(b=>b.onclick=()=>{$$('.cat').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+ }else{const n={explore:'Jelajahi',create:'Publikasikan Musik',library:'Koleksi',profile:'Profil'}[tab];
+ v.innerHTML=`<div class="empty"><b>${n}</b>Halaman ini dibangun di tahap berikutnya.${tab==='profile'?`<br><br><button class="btn out" id="bOut">Keluar</button>`:''}</div>`;
+ const o=$('#bOut');if(o)o.onclick=logout}
+ $$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo));
+ $$('[data-play]').forEach(b=>b.onclick=()=>toast('Pemutar musik hadir di Tahap 2'));
+ $$('.more').forEach(b=>b.onclick=()=>toast('Menu hadir di Tahap 3'));
+ const q=$('#q');if(q)q.onfocus=()=>setTab('explore')}
+function setTab(t){tab=t;$$('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render();scrollTo(0,0)}
+
+/* ===== AUTH ===== */
+async function loadProfile(){if(!sb||!user)return;
+ const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();profile=data;
+ const n=(profile&&profile.display_name)||user.user_metadata?.display_name||user.email||'?';$('#avatar').textContent=n[0].toUpperCase()}
+async function enter(){await loadProfile();show('main');setTab('home')}
+async function logout(){if(sb)await sb.auth.signOut();user=profile=null;show('login')}
+
+$$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+$$('[data-eye]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.eye);i.type=i.type==='password'?'text':'password'});
+$$('#nav [data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$('#bNotif').onclick=()=>toast('Notifikasi hadir di Fase 2');
+$('#avatar').onclick=()=>setTab('profile');
+
+$('#bLogin').onclick=e=>busy(e.currentTarget,async()=>{
+ $('#lerr').textContent='';if(needCfg('#lerr'))return;
+ let id=$('#lid').value.trim(),pw=$('#lpw').value;
+ if(!id||!pw){$('#lerr').textContent='Isi email/username dan kata sandi.';return}
+ try{if(!id.includes('@')){const{data,error}=await sb.rpc('email_by_username',{p_username:id.toLowerCase()});
+   if(error||!data){$('#lerr').textContent='Username tidak ditemukan.';return}id=data}
+  const{data,error}=await sb.auth.signInWithPassword({email:id,password:pw});
+  if(error)throw error;user=data.user;await enter()}catch(x){$('#lerr').textContent=msg(x)}});
+
+$('#bGoogle').onclick=async()=>{if(needCfg('#lerr'))return;
+ const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});if(error)$('#lerr').textContent=msg(error)};
+
+$('#bForgot').onclick=async()=>{if(needCfg('#lerr'))return;const m=$('#lid').value.trim();
+ if(!m.includes('@')){$('#lerr').textContent='Masukkan email Anda di kolom di atas.';return}
+ const{error}=await sb.auth.resetPasswordForEmail(m,{redirectTo:location.origin});
+ error?$('#lerr').textContent=msg(error):toast('Tautan reset dikirim ke email Anda')};
+
+$('#bReg').onclick=e=>busy(e.currentTarget,async()=>{
+ const E=$('#rerr');E.textContent='';if(needCfg('#rerr'))return;
+ const dn=$('#rname').value.trim(),un=$('#runame').value.trim().toLowerCase(),em=$('#rmail').value.trim(),pw=$('#rpw').value;
+ if(!dn||!un||!em||!pw){E.textContent='Lengkapi semua kolom.';return}
+ if(!/^[a-z0-9._]{3,20}$/.test(un)){E.textContent='Format username belum sesuai.';return}
+ if(pw.length<8){E.textContent='Kata sandi minimal 8 karakter.';return}
+ if(pw!==$('#rpw2').value){E.textContent='Kata sandi tidak sama.';return}
+ try{const{data,error}=await sb.auth.signUp({email:em,password:pw,options:{data:{display_name:dn,username:un}}});
+  if(error)throw error;
+  if(data.session){user=data.user;await enter()}else{show('login');toast('Cek email Anda untuk konfirmasi akun')}}catch(x){E.textContent=msg(x)}});
+
+/* ===== START ===== */
+(async()=>{
+ if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+ const wait=new Promise(r=>setTimeout(r,1800));
+ let s=null;if(sb){try{s=(await sb.auth.getSession()).data.session}catch(e){}}
+ await wait;
+ if(s){user=s.user;await enter()}else show('login');
+ if(sb)sb.auth.onAuthStateChange((ev,ss)=>{if(ev==='SIGNED_IN'&&ss&&!user){user=ss.user;enter()}})})();
+</script>
+</body>
+</html>
