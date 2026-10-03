@@ -107,6 +107,10 @@ nav .plus svg{width:30px;height:30px;stroke-width:2.4;fill:none!important}
 .act{display:flex;gap:4px;margin-top:6px;margin-left:-8px}.act button{display:flex;align-items:center;gap:5px;min-width:38px;height:38px;padding:0 8px;color:var(--mute);font-size:12px}
 .act svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}.act i{font-style:normal}.act button.on{color:var(--red)}.act button.on svg{fill:var(--red)}
 nav button.on:not([data-tab=home]) svg{fill:none}
+.trk{align-items:flex-start}.play{align-self:center}.chips{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.rk{width:26px;margin-top:6px;font-weight:700;font-size:18px;color:var(--red);flex:none;text-align:center}.cr{color:inherit;font:inherit;text-align:left;padding:0}
+.avi{border-radius:50%;object-fit:cover;background:var(--s3);border:2px solid var(--red);display:inline-grid;place-items:center;font-weight:700}
+.ph{text-align:center;padding-top:22px}.ph h2{font-size:22px;margin-top:10px}.ph em{font-style:normal;color:var(--mute);font-size:14px}.st{display:flex;justify-content:center;gap:24px;margin-top:12px;color:var(--mute);font-size:13px}.st b{color:#fff;font-size:16px}
 </style>
 </head>
 <body>
@@ -192,21 +196,24 @@ const CATS=[['Trending','fire'],['New','note'],['Popular','star'],['Creators','u
 
 const A={like:'<path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2.500A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/>',save:'<path d="M6 4h12v17l-6-4-6 4z"/>',share:'<circle cx="6" cy="12" r="2.500"/><circle cx="18" cy="6" r="2.500"/><circle cx="18" cy="18" r="2.500"/><path d="m8 11 8-4M8 13l8 4"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'};
 const ic=k=>`<svg viewBox="0 0 24 24">${A[k]}</svg>`;
-function trackHTML(x){const cv=x.cover_path?`background:url('${pub('covers',x.cover_path)}') center/cover`:`background:${grad(x.id)}`;
+function trackHTML(x,r){const cv=x.cover_path?`background:url('${pub('covers',x.cover_path)}') center/cover`:`background:${grad(x.id)}`;
  const tg=[x.genre,x.mood].filter(Boolean),id=x.id;
- return`<div class="trk"><div class="cv" style="${cv}" role="img" aria-label="Sampul ${esc(x.title)}"></div><div class="ti"><b>${esc(x.title)}</b><em>${esc(x.profiles?.display_name||'Kreator')}</em><div class="chips"><span>AI Music</span>${tg.map(t=>`<span>${esc(t)}</span>`).join('')}</div>
+ return`<div class="trk">${r?`<span class="rk">${r}</span>`:''}<div class="cv" style="${cv}" role="img" aria-label="Sampul ${esc(x.title)}"></div><div class="ti"><b>${esc(x.title)}</b><em><button class="cr" data-cr="${x.creator_id}">${esc(x.profiles?.display_name||'Kreator')}</button></em><div class="chips"><span>AI Music</span>${tg.map(t=>`<span>${esc(t)}</span>`).join('')}</div>
 <div class="act"><button data-like="${id}" class="${myLikes.has(id)?'on':''}" aria-label="Suka">${ic('like')}<i>${x.likes||0}</i></button><button data-save="${id}" class="${mySaves.has(id)?'on':''}" aria-label="Simpan ke Koleksi">${ic('save')}</button><button data-share="${id}" aria-label="Bagikan">${ic('share')}</button>${x.allow_download?`<button data-dl="${id}" aria-label="Unduh">${ic('dl')}</button>`:''}</div></div><button class="play" data-play="${id}" aria-label="Putar ${esc(x.title)}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button></div>`}
-const list=(a,t,d)=>a.length?a.map(trackHTML).join(''):`<div class="empty"><b>${t||'Belum ada lagu'}</b>${d||'Jadilah yang pertama mengunggah musik AI.'}<br><br><button class="btn red" data-tab-go="${t?'explore':'create'}">${t?'Jelajahi lagu':'Unggah lagu'}</button></div>`;
+const list=(a,t,d,rk)=>a.length?a.map((x,i)=>trackHTML(x,rk?i+1:0)).join(''):`<div class="empty"><b>${t||'Belum ada lagu'}</b>${d||'Jadilah yang pertama mengunggah musik AI.'}<br><br><button class="btn red" data-tab-go="${t?'explore':'create'}">${t?'Jelajahi lagu':'Unggah lagu'}</button></div>`;
 const SRCH='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
 const bigMsg=f=>`File terlalu besar (${(f.size/MB).toFixed(1)} MB). Maksimal 10 MB per lagu. Kompres atau ekspor ulang dengan bitrate lebih rendah.`;
 
-const SEL='id,title,genre,mood,cover_path,audio_path,allow_download,play_count,profiles(display_name),song_likes(count)';
+const SEL='id,title,genre,mood,cover_path,audio_path,allow_download,play_count,creator_id,profiles(display_name,avatar_url),song_likes(count)';
 const norm=s=>(s.likes=s.song_likes?.[0]?.count||0,s);
-let myLikes=new Set(),mySaves=new Set(),lib=[];
+let myLikes=new Set(),mySaves=new Set(),lib=[],chartIds=[],cid=null,prevTab='home';
 async function fetchSongs(){if(!sb)return;
  const[a,l,v]=await Promise.all([sb.from('songs').select(SEL).eq('status','published').eq('visibility','public').order('created_at',{ascending:false}).limit(60),
   sb.from('song_likes').select('song_id').eq('user_id',user?.id),sb.from('song_saves').select('song_id').eq('user_id',user?.id)]);
  songs=(a.data||[]).map(norm);myLikes=new Set((l.data||[]).map(r=>r.song_id));mySaves=new Set((v.data||[]).map(r=>r.song_id));
+ const c=await sb.rpc('weekly_chart',{p_limit:20});chartIds=(c.data||[]).map(r=>r.song_id);
+ const miss=chartIds.filter(i=>!songs.find(x=>x.id===i));
+ if(miss.length){const m=await sb.from('songs').select(SEL).in('id',miss);(m.data||[]).forEach(x=>songs.push(norm(x)))}
  if(a.error)toast('Gagal memuat lagu')}
 async function loadLib(){const{data}=await sb.from('song_saves').select(`songs(${SEL})`).eq('user_id',user.id).order('created_at',{ascending:false});
  lib=(data||[]).map(r=>r.songs).filter(Boolean).map(norm);lib.forEach(s=>{if(!songs.find(x=>x.id===s.id))songs.push(s)})}
@@ -225,15 +232,15 @@ async function dlSong(id){const s=songs.find(x=>x.id===id);if(!s||!s.allow_downl
  try{const r=await fetch(pub('audio',s.audio_path));if(!r.ok)throw 0;const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());
   a.download=`${s.title.replace(/[\\/:*?"<>|]/g,'')}.${s.audio_path.split('.').pop()}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   sb.from('song_downloads').insert({song_id:id,user_id:user.id}).then(()=>{},()=>{});toast('Unduhan dimulai')}catch(e){toast('Gagal mengunduh. Coba lagi.')}}
-function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playSong(b.dataset.play));$$('[data-like]').forEach(b=>b.onclick=()=>toggle('like',b.dataset.like));$$('[data-save]').forEach(b=>b.onclick=()=>toggle('save',b.dataset.save));$$('[data-share]').forEach(b=>b.onclick=()=>shareSong(b.dataset.share));$$('[data-dl]').forEach(b=>b.onclick=()=>dlSong(b.dataset.dl));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
+function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playSong(b.dataset.play));$$('[data-cr]').forEach(b=>b.onclick=()=>openCreator(b.dataset.cr));$$('[data-like]').forEach(b=>b.onclick=()=>toggle('like',b.dataset.like));$$('[data-save]').forEach(b=>b.onclick=()=>toggle('save',b.dataset.save));$$('[data-share]').forEach(b=>b.onclick=()=>shareSong(b.dataset.share));$$('[data-dl]').forEach(b=>b.onclick=()=>dlSong(b.dataset.dl));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
 function showRes(){const q=query.toLowerCase(),a=songs.filter(s=>(genre==='Semua'||s.genre===genre)&&(!q||[s.title,s.genre,s.mood,s.profiles?.display_name].some(v=>(v||'').toLowerCase().includes(q))));$('#res').innerHTML=list(a);bindList()}
 
 function render(){const v=$('#view');
- if(tab==='home'){const a=mode==='New'?songs:[...songs].sort((x,y)=>y.play_count-x.play_count);
+ if(tab==='home'){const a=mode==='New'?songs:mode==='Trending'&&chartIds.length?chartIds.map(i=>songs.find(x=>x.id===i)).filter(Boolean):[...songs].sort((x,y)=>y.play_count-x.play_count);
   v.innerHTML=`<label class="search">${SRCH}<input placeholder="Cari lagu, artis, atau kreator..." aria-label="Cari" id="q"></label>
  <div class="hero"><div><small>WELCOME TO</small><h1>LAVEENA</h1><p>Discover. Create. Share.<br>The AI Music Community</p><button class="btn red" data-tab-go="explore">Jelajahi Sekarang</button></div><img src="/logo-mark.png" alt=""></div>
  <div class="cats">${CATS.map(c=>`<button class="cat${c[0]===mode?' on':''}"><span><svg viewBox="0 0 24 24">${I[c[1]]}</svg></span>${c[0]}</button>`).join('')}</div>
- <div class="sh"><h2>${mode==='New'?'Lagu Terbaru':'Trending Tracks'}</h2><button class="link" data-tab-go="explore">Lihat semua</button></div>${list(a.slice(0,10))}`;
+ <div class="sh"><h2>${mode==='New'?'Lagu Terbaru':mode==='Trending'?'Chart Mingguan':'Terpopuler'}</h2><button class="link" data-tab-go="explore">Lihat semua</button></div>${list(a.slice(0,10),null,null,mode==='Trending'&&chartIds.length>0)}`;
   $$('.cat').forEach((b,i)=>b.onclick=()=>{if(i===5)return setTab('explore');if(i>2)return toast('Segera hadir');mode=CATS[i][0];render()});
   $('#q').onfocus=()=>setTab('explore');bindList()}
  else if(tab==='explore'){
@@ -259,9 +266,30 @@ function render(){const v=$('#view');
   $('#bSong').onclick=e=>busy(e.currentTarget,submitSong)}
  else if(tab==='library'){v.innerHTML=`<h2 style="margin:22px 0 4px;font-size:22px">Koleksi</h2><div id="res"></div>`;
   loadLib().then(()=>{if(tab==='library'){$('#res').innerHTML=list(lib,'Koleksi kosong','Ketuk ikon simpan pada lagu untuk menambahkannya di sini.');bindList()}})}
- else{v.innerHTML=`<div class="empty"><b>Profil</b>Halaman ini dibangun di tahap berikutnya.${tab==='profile'?`<br><br><button class="btn out" id="bOut">Keluar</button>`:''}</div>`;
-  const o=$('#bOut');if(o)o.onclick=logout}
+ else if(tab==='profile'||tab==='creator'){
+  v.innerHTML=`<div id="ph"><div class="empty">Memuat...</div></div><div id="res"></div>`;loadCreator(tab==='profile'?user.id:cid,tab==='profile')}
  $$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
+const avUrl=p=>!p?'':p.startsWith('http')?p:pub('avatars',p);
+const avHTML=(p,n,z)=>p?`<img class="avi" style="width:${z}px;height:${z}px" src="${esc(avUrl(p))}" alt="">`:`<span class="avi" style="width:${z}px;height:${z}px;font-size:${z/2.5}px">${esc((n||'?')[0].toUpperCase())}</span>`;
+function openCreator(id){if(user&&id===user.id)return setTab('profile');prevTab=tab==='creator'?prevTab:tab;cid=id;setTab('creator')}
+async function loadCreator(id,self){
+ const[p,s]=await Promise.all([sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',id).maybeSingle(),sb.from('songs').select(SEL).eq('creator_id',id).order('created_at',{ascending:false})]);
+ if(tab!=='profile'&&tab!=='creator')return;
+ const pr=p.data;if(!pr){$('#ph').innerHTML='<div class="empty"><b>Kreator tidak ditemukan</b></div>';return}
+ const a=(s.data||[]).map(norm);a.forEach(x=>{if(!songs.find(y=>y.id===x.id))songs.push(x)});
+ const lk=a.reduce((n,x)=>n+x.likes,0);
+ $('#ph').innerHTML=`${self?'':'<button class="link" id="bBack" style="margin-top:14px">← Kembali</button>'}<div class="ph">${avHTML(pr.avatar_url,pr.display_name,84)}<h2>${esc(pr.display_name)}</h2><em>@${esc(pr.username)}</em><div class="st"><span><b>${a.length}</b> lagu</span><span><b>${lk}</b> suka</span></div>${self?'<button class="btn out" id="bEdit" style="margin-top:14px">Ubah profil</button><button class="btn" id="bOut" style="color:var(--mute)">Keluar</button>':''}</div><h2 style="font-size:19px;margin:18px 0 0">${self?'Lagu saya':'Lagu'}</h2>`;
+ $('#res').innerHTML=list(a);bindList();
+ if(self){$('#bOut').onclick=logout;$('#bEdit').onclick=()=>editProfile(pr)}else $('#bBack').onclick=()=>setTab(prevTab)}
+function editProfile(pr){
+ $('#ph').innerHTML=`<h2 style="margin:22px 0 6px;font-size:22px">Ubah Profil</h2><div class="field"><input id="pn" maxlength="40" value="${esc(pr.display_name)}" aria-label="Nama tampilan"></div><label class="field fl" id="pl"><span id="pf">Ganti foto (maks. 2 MB)</span><input type="file" id="pa" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn red" id="pSave">Simpan</button><button class="btn" id="pCancel" style="color:var(--mute)">Batal</button><p class="err" id="perr" role="alert"></p>`;
+ $('#res').innerHTML='';
+ $('#pa').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>MAX_COVER){$('#perr').textContent=`Foto terlalu besar (${(f.size/MB).toFixed(1)} MB). Maksimal 2 MB.`;toast('Foto melebihi 2 MB',4500);e.target.value='';return}$('#perr').textContent='';$('#pf').textContent=f.name;$('#pl').classList.add('has')};
+ $('#pCancel').onclick=()=>render();
+ $('#pSave').onclick=e=>busy(e.currentTarget,async()=>{const n=$('#pn').value.trim(),f=$('#pa').files[0];if(!n){$('#perr').textContent='Nama tidak boleh kosong.';return}
+  try{let path=pr.avatar_url;if(f){path=`${user.id}/${Date.now()}.${(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')}`;const u=await sb.storage.from('avatars').upload(path,f);if(u.error)throw u.error}
+   const r=await sb.from('profiles').update({display_name:n,avatar_url:path,updated_at:new Date().toISOString()}).eq('id',user.id);if(r.error)throw r.error;
+   toast('Profil diperbarui');await Promise.all([loadProfile(),fetchSongs()]);render()}catch(x){$('#perr').textContent=msg(x)}})}
 function setTab(t){tab=t;$$('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render();scrollTo(0,0)}
 
 async function submitSong(){const E=$('#cerr');E.textContent='';
@@ -297,7 +325,7 @@ $('#ms').oninput=e=>{if(au.duration)au.currentTime=e.target.value/1000*au.durati
 /* ===== AUTH ===== */
 async function loadProfile(){if(!sb||!user)return;
  const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();profile=data;
- const n=(profile&&profile.display_name)||user.user_metadata?.display_name||user.email||'?';$('#avatar').textContent=n[0].toUpperCase()}
+ const n=(profile&&profile.display_name)||user.user_metadata?.display_name||user.email||'?';$('#avatar').textContent=n[0].toUpperCase();const av=profile&&profile.avatar_url;$('#avatar').style.background=av?`url('${avUrl(av)}') center/cover`:'';if(av)$('#avatar').textContent=''}
 async function enter(){await Promise.all([loadProfile(),fetchSongs()]);show('main');
  const sid=new URLSearchParams(location.search).get('lagu'),sg=songs.find(x=>x.id===sid);history.replaceState(null,'',location.pathname);
  if(sg){query=sg.title;genre='Semua';setTab('explore')}else setTab('home')}
