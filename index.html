@@ -104,6 +104,9 @@ nav .plus svg{width:30px;height:30px;stroke-width:2.4;fill:none!important}
 .mi{flex:1;min-width:0}.mi b,.mi em{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mi em{font-style:normal;color:var(--mute);font-size:12px}
 #ms{width:100%;accent-color:var(--red);margin-top:4px}#main.pm{padding-bottom:calc(170px + env(safe-area-inset-bottom))}#toast{bottom:calc(170px + env(safe-area-inset-bottom))}
 .field select{color:#fff;font:inherit;appearance:none;-webkit-appearance:none;padding-right:26px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0 center/18px}
+.act{display:flex;gap:4px;margin-top:6px;margin-left:-8px}.act button{display:flex;align-items:center;gap:5px;min-width:38px;height:38px;padding:0 8px;color:var(--mute);font-size:12px}
+.act svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}.act i{font-style:normal}.act button.on{color:var(--red)}.act button.on svg{fill:var(--red)}
+nav button.on:not([data-tab=home]) svg{fill:none}
 </style>
 </head>
 <body>
@@ -187,18 +190,42 @@ async function busy(b,fn){b.disabled=true;try{await fn()}finally{b.disabled=fals
 const I={fire:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-9z"/>',note:'<path d="M9 18V6l10-2v12"/><circle cx="6.500" cy="18" r="2.500"/><circle cx="16.500" cy="16" r="2.500"/>',star:'<path d="m12 3 2.800 5.800 6.200.9-4.500 4.400 1 6.200L12 17.300 6.500 20.300l1-6.200L3 9.700l6.200-.9z"/>',users:'<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6M18 8v6M15 11h6"/>',list:'<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',compass:'<circle cx="12" cy="12" r="9"/><path d="m15.500 8.500-2 5-5 2 2-5z"/>'};
 const CATS=[['Trending','fire'],['New','note'],['Popular','star'],['Creators','users'],['Playlists','list'],['Explore','compass']];
 
+const A={like:'<path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2.500A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/>',save:'<path d="M6 4h12v17l-6-4-6 4z"/>',share:'<circle cx="6" cy="12" r="2.500"/><circle cx="18" cy="6" r="2.500"/><circle cx="18" cy="18" r="2.500"/><path d="m8 11 8-4M8 13l8 4"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'};
+const ic=k=>`<svg viewBox="0 0 24 24">${A[k]}</svg>`;
 function trackHTML(x){const cv=x.cover_path?`background:url('${pub('covers',x.cover_path)}') center/cover`:`background:${grad(x.id)}`;
- const tg=[x.genre,x.mood].filter(Boolean);
- return`<div class="trk"><div class="cv" style="${cv}" role="img" aria-label="Sampul ${esc(x.title)}"></div><div class="ti"><b>${esc(x.title)}</b><em>${esc(x.profiles?.display_name||'Kreator')}</em><div class="chips"><span>AI Music</span>${tg.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div><button class="play" data-play="${x.id}" aria-label="Putar ${esc(x.title)}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button></div>`}
-const list=a=>a.length?a.map(trackHTML).join(''):`<div class="empty"><b>Belum ada lagu</b>Jadilah yang pertama mengunggah musik AI.<br><br><button class="btn red" data-tab-go="create">Unggah lagu</button></div>`;
+ const tg=[x.genre,x.mood].filter(Boolean),id=x.id;
+ return`<div class="trk"><div class="cv" style="${cv}" role="img" aria-label="Sampul ${esc(x.title)}"></div><div class="ti"><b>${esc(x.title)}</b><em>${esc(x.profiles?.display_name||'Kreator')}</em><div class="chips"><span>AI Music</span>${tg.map(t=>`<span>${esc(t)}</span>`).join('')}</div>
+<div class="act"><button data-like="${id}" class="${myLikes.has(id)?'on':''}" aria-label="Suka">${ic('like')}<i>${x.likes||0}</i></button><button data-save="${id}" class="${mySaves.has(id)?'on':''}" aria-label="Simpan ke Koleksi">${ic('save')}</button><button data-share="${id}" aria-label="Bagikan">${ic('share')}</button>${x.allow_download?`<button data-dl="${id}" aria-label="Unduh">${ic('dl')}</button>`:''}</div></div><button class="play" data-play="${id}" aria-label="Putar ${esc(x.title)}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button></div>`}
+const list=(a,t,d)=>a.length?a.map(trackHTML).join(''):`<div class="empty"><b>${t||'Belum ada lagu'}</b>${d||'Jadilah yang pertama mengunggah musik AI.'}<br><br><button class="btn red" data-tab-go="${t?'explore':'create'}">${t?'Jelajahi lagu':'Unggah lagu'}</button></div>`;
 const SRCH='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
 const bigMsg=f=>`File terlalu besar (${(f.size/MB).toFixed(1)} MB). Maksimal 10 MB per lagu. Kompres atau ekspor ulang dengan bitrate lebih rendah.`;
 
+const SEL='id,title,genre,mood,cover_path,audio_path,allow_download,play_count,profiles(display_name),song_likes(count)';
+const norm=s=>(s.likes=s.song_likes?.[0]?.count||0,s);
+let myLikes=new Set(),mySaves=new Set(),lib=[];
 async function fetchSongs(){if(!sb)return;
- const{data,error}=await sb.from('songs').select('id,title,genre,mood,cover_path,audio_path,play_count,profiles(display_name)').eq('status','published').eq('visibility','public').order('created_at',{ascending:false}).limit(60);
- songs=data||[];if(error)toast('Gagal memuat lagu')}
-
-function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playSong(b.dataset.play));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
+ const[a,l,v]=await Promise.all([sb.from('songs').select(SEL).eq('status','published').eq('visibility','public').order('created_at',{ascending:false}).limit(60),
+  sb.from('song_likes').select('song_id').eq('user_id',user?.id),sb.from('song_saves').select('song_id').eq('user_id',user?.id)]);
+ songs=(a.data||[]).map(norm);myLikes=new Set((l.data||[]).map(r=>r.song_id));mySaves=new Set((v.data||[]).map(r=>r.song_id));
+ if(a.error)toast('Gagal memuat lagu')}
+async function loadLib(){const{data}=await sb.from('song_saves').select(`songs(${SEL})`).eq('user_id',user.id).order('created_at',{ascending:false});
+ lib=(data||[]).map(r=>r.songs).filter(Boolean).map(norm);lib.forEach(s=>{if(!songs.find(x=>x.id===s.id))songs.push(s)})}
+function paint(id){const s=songs.find(x=>x.id===id);
+ $$(`[data-like="${id}"]`).forEach(b=>{b.classList.toggle('on',myLikes.has(id));const i=b.querySelector('i');if(i&&s)i.textContent=s.likes||0});
+ $$(`[data-save="${id}"]`).forEach(b=>b.classList.toggle('on',mySaves.has(id)))}
+async function toggle(k,id){const set=k==='like'?myLikes:mySaves,tb=k==='like'?'song_likes':'song_saves',on=set.has(id),s=songs.find(x=>x.id===id),d=on?-1:1;
+ on?set.delete(id):set.add(id);if(k==='like'&&s)s.likes=Math.max(0,(s.likes||0)+d);paint(id);
+ const r=on?await sb.from(tb).delete().eq('song_id',id).eq('user_id',user.id):await sb.from(tb).insert({song_id:id,user_id:user.id});
+ if(r.error){on?set.add(id):set.delete(id);if(k==='like'&&s)s.likes=Math.max(0,s.likes-d);paint(id);toast('Gagal, coba lagi');return}
+ if(k==='save'){toast(on?'Dihapus dari Koleksi':'Disimpan ke Koleksi');if(tab==='library'&&on){lib=lib.filter(x=>x.id!==id);$('#res').innerHTML=list(lib,'Koleksi kosong','Ketuk ikon simpan pada lagu untuk menambahkannya di sini.');bindList()}}}
+async function shareSong(id){const s=songs.find(x=>x.id===id);if(!s)return;const url=`${location.origin}/?lagu=${id}`;
+ try{if(navigator.share)await navigator.share({title:s.title,text:`Dengarkan "${s.title}" di LAVEENA`,url});else{await navigator.clipboard.writeText(url);toast('Tautan disalin')}
+  sb.from('song_shares').insert({song_id:id,user_id:user.id}).then(()=>{},()=>{})}catch(e){}}
+async function dlSong(id){const s=songs.find(x=>x.id===id);if(!s||!s.allow_download)return;toast('Mengunduh...');
+ try{const r=await fetch(pub('audio',s.audio_path));if(!r.ok)throw 0;const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());
+  a.download=`${s.title.replace(/[\\/:*?"<>|]/g,'')}.${s.audio_path.split('.').pop()}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  sb.from('song_downloads').insert({song_id:id,user_id:user.id}).then(()=>{},()=>{});toast('Unduhan dimulai')}catch(e){toast('Gagal mengunduh. Coba lagi.')}}
+function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playSong(b.dataset.play));$$('[data-like]').forEach(b=>b.onclick=()=>toggle('like',b.dataset.like));$$('[data-save]').forEach(b=>b.onclick=()=>toggle('save',b.dataset.save));$$('[data-share]').forEach(b=>b.onclick=()=>shareSong(b.dataset.share));$$('[data-dl]').forEach(b=>b.onclick=()=>dlSong(b.dataset.dl));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
 function showRes(){const q=query.toLowerCase(),a=songs.filter(s=>(genre==='Semua'||s.genre===genre)&&(!q||[s.title,s.genre,s.mood,s.profiles?.display_name].some(v=>(v||'').toLowerCase().includes(q))));$('#res').innerHTML=list(a);bindList()}
 
 function render(){const v=$('#view');
@@ -230,7 +257,9 @@ function render(){const v=$('#view');
    if(f.size>MAX_COVER){$('#cerr').textContent='Sampul terlalu besar. Maksimal 2 MB.';toast('Sampul melebihi 2 MB',4500);e.target.value='';$('#cn').textContent='Pilih sampul (opsional)';$('#cl').classList.remove('has');return}
    $('#cerr').textContent='';$('#cn').textContent=f.name;$('#cl').classList.add('has')};
   $('#bSong').onclick=e=>busy(e.currentTarget,submitSong)}
- else{v.innerHTML=`<div class="empty"><b>${tab==='library'?'Koleksi':'Profil'}</b>Halaman ini dibangun di tahap berikutnya.${tab==='profile'?`<br><br><button class="btn out" id="bOut">Keluar</button>`:''}</div>`;
+ else if(tab==='library'){v.innerHTML=`<h2 style="margin:22px 0 4px;font-size:22px">Koleksi</h2><div id="res"></div>`;
+  loadLib().then(()=>{if(tab==='library'){$('#res').innerHTML=list(lib,'Koleksi kosong','Ketuk ikon simpan pada lagu untuk menambahkannya di sini.');bindList()}})}
+ else{v.innerHTML=`<div class="empty"><b>Profil</b>Halaman ini dibangun di tahap berikutnya.${tab==='profile'?`<br><br><button class="btn out" id="bOut">Keluar</button>`:''}</div>`;
   const o=$('#bOut');if(o)o.onclick=logout}
  $$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
 function setTab(t){tab=t;$$('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render();scrollTo(0,0)}
@@ -256,6 +285,7 @@ const PL='<path d="M6 4v16l14-8z"/>',PA='<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>'
 function playSong(id){const s=songs.find(x=>x.id===id);if(!s||!s.audio_path)return;
  if(cur&&cur.id===id){au.paused?au.play():au.pause();return}
  cur=s;au.src=pub('audio',s.audio_path);au.play().catch(()=>toast('Tidak dapat memutar lagu'));
+ if('mediaSession'in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:s.title,artist:s.profiles?.display_name||'Kreator',album:'LAVEENA',artwork:[{src:s.cover_path?pub('covers',s.cover_path):location.origin+'/icon-512.png',sizes:'512x512'}]});navigator.mediaSession.setActionHandler('play',()=>au.play());navigator.mediaSession.setActionHandler('pause',()=>au.pause())}
  $('#mt').textContent=s.title;$('#ma').textContent=s.profiles?.display_name||'Kreator';
  $('#mini').style.display='flex';$('#main').classList.add('pm');
  sb.rpc('increment_play',{p_song:id}).then(()=>{},()=>{})}
@@ -268,8 +298,10 @@ $('#ms').oninput=e=>{if(au.duration)au.currentTime=e.target.value/1000*au.durati
 async function loadProfile(){if(!sb||!user)return;
  const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();profile=data;
  const n=(profile&&profile.display_name)||user.user_metadata?.display_name||user.email||'?';$('#avatar').textContent=n[0].toUpperCase()}
-async function enter(){await Promise.all([loadProfile(),fetchSongs()]);show('main');setTab('home')}
-async function logout(){au.pause();cur=null;songs=[];if(sb)await sb.auth.signOut();user=profile=null;show('login')}
+async function enter(){await Promise.all([loadProfile(),fetchSongs()]);show('main');
+ const sid=new URLSearchParams(location.search).get('lagu'),sg=songs.find(x=>x.id===sid);history.replaceState(null,'',location.pathname);
+ if(sg){query=sg.title;genre='Semua';setTab('explore')}else setTab('home')}
+async function logout(){au.pause();cur=null;songs=[];myLikes=new Set();mySaves=new Set();if(sb)await sb.auth.signOut();user=profile=null;show('login')}
 
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 $$('[data-eye]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.eye);i.type=i.type==='password'?'text':'password'});
@@ -309,9 +341,9 @@ $('#bReg').onclick=e=>busy(e.currentTarget,async()=>{
 (async()=>{
  if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
  const wait=new Promise(r=>setTimeout(r,1800));
- let s=null;if(sb){try{s=(await sb.auth.getSession()).data.session}catch(e){}}
+ let s=null;if(sb){try{s=(await Promise.race([sb.auth.getSession(),new Promise((_,j)=>setTimeout(j,6000))])).data.session}catch(e){}}
  await wait;
- if(s){user=s.user;await enter()}else show('login');
+ if(s){user=s.user;try{await enter()}catch(e){try{await sb.auth.signOut()}catch(x){}show('login')}}else show('login');
  if(sb)sb.auth.onAuthStateChange((ev,ss)=>{if(ev==='SIGNED_IN'&&ss&&!user){user=ss.user;enter()}})})();
 </script>
 </body>
