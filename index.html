@@ -111,6 +111,8 @@ nav button.on:not([data-tab=home]) svg{fill:none}
 .rk{width:26px;margin-top:6px;font-weight:700;font-size:18px;color:var(--red);flex:none;text-align:center}.cr{color:inherit;font:inherit;text-align:left;padding:0}
 .avi{border-radius:50%;object-fit:cover;background:var(--s3);border:2px solid var(--red);display:inline-grid;place-items:center;font-weight:700}
 .ph{text-align:center;padding-top:22px}.ph h2{font-size:22px;margin-top:10px}.ph em{font-style:normal;color:var(--mute);font-size:14px}.st{display:flex;justify-content:center;gap:24px;margin-top:12px;color:var(--mute);font-size:13px}.st b{color:#fff;font-size:16px}
+#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20}.sh2{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;background:#111;border-top:1px solid #3a0710;border-radius:22px 22px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:80vh;overflow:auto}
+.plr{display:block;width:100%;text-align:left;padding:14px 4px;border-bottom:1px solid var(--line)}.plrow{width:100%;text-align:left}
 </style>
 </head>
 <body>
@@ -163,6 +165,7 @@ nav button.on:not([data-tab=home]) svg{fill:none}
   <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profil</button>
 </nav>
 <div id="mini"><button id="mp" aria-label="Putar atau jeda"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button><div class="mi"><b id="mt"></b><em id="ma"></em><input type="range" id="ms" min="0" max="1000" value="0" aria-label="Posisi lagu"></div></div><audio id="au" preload="none"></audio>
+<div id="sheet"></div>
 <div id="toast" role="status"></div>
 </div>
 
@@ -194,23 +197,23 @@ async function busy(b,fn){b.disabled=true;try{await fn()}finally{b.disabled=fals
 const I={fire:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-9z"/>',note:'<path d="M9 18V6l10-2v12"/><circle cx="6.500" cy="18" r="2.500"/><circle cx="16.500" cy="16" r="2.500"/>',star:'<path d="m12 3 2.800 5.800 6.200.9-4.500 4.400 1 6.200L12 17.300 6.500 20.300l1-6.200L3 9.700l6.200-.9z"/>',users:'<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3-6 7-6M18 8v6M15 11h6"/>',list:'<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',compass:'<circle cx="12" cy="12" r="9"/><path d="m15.500 8.500-2 5-5 2 2-5z"/>'};
 const CATS=[['Trending','fire'],['New','note'],['Popular','star'],['Creators','users'],['Playlists','list'],['Explore','compass']];
 
-const A={like:'<path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2.500A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/>',save:'<path d="M6 4h12v17l-6-4-6 4z"/>',share:'<circle cx="6" cy="12" r="2.500"/><circle cx="18" cy="6" r="2.500"/><circle cx="18" cy="18" r="2.500"/><path d="m8 11 8-4M8 13l8 4"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'};
+const A={like:'<path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2.500A4 4 0 0 1 19 10c0 5.500-7 10-7 10z"/>',save:'<path d="M6 4h12v17l-6-4-6 4z"/>',share:'<circle cx="6" cy="12" r="2.500"/><circle cx="18" cy="6" r="2.500"/><circle cx="18" cy="18" r="2.500"/><path d="m8 11 8-4M8 13l8 4"/>',dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',pl:'<path d="M4 6h12M4 12h8M4 18h8M17 14v6M14 17h6"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>'};
 const ic=k=>`<svg viewBox="0 0 24 24">${A[k]}</svg>`;
 function trackHTML(x,r){const cv=x.cover_path?`background:url('${pub('covers',x.cover_path)}') center/cover`:`background:${grad(x.id)}`;
  const tg=[x.genre,x.mood].filter(Boolean),id=x.id;
  return`<div class="trk">${r?`<span class="rk">${r}</span>`:''}<div class="cv" style="${cv}" role="img" aria-label="Sampul ${esc(x.title)}"></div><div class="ti"><b>${esc(x.title)}</b><em><button class="cr" data-cr="${x.creator_id}">${esc(x.profiles?.display_name||'Kreator')}</button></em><div class="chips"><span>AI Music</span>${tg.map(t=>`<span>${esc(t)}</span>`).join('')}</div>
-<div class="act"><button data-like="${id}" class="${myLikes.has(id)?'on':''}" aria-label="Suka">${ic('like')}<i>${x.likes||0}</i></button><button data-save="${id}" class="${mySaves.has(id)?'on':''}" aria-label="Simpan ke Koleksi">${ic('save')}</button><button data-share="${id}" aria-label="Bagikan">${ic('share')}</button>${x.allow_download?`<button data-dl="${id}" aria-label="Unduh">${ic('dl')}</button>`:''}</div></div><button class="play" data-play="${id}" aria-label="Putar ${esc(x.title)}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button></div>`}
+<div class="act"><button data-like="${id}" class="${myLikes.has(id)?'on':''}" aria-label="Suka">${ic('like')}<i>${x.likes||0}</i></button><button data-save="${id}" class="${mySaves.has(id)?'on':''}" aria-label="Simpan ke Koleksi">${ic('save')}</button><button data-pl="${id}" aria-label="Tambah ke playlist">${ic('pl')}</button><button data-share="${id}" aria-label="Bagikan">${ic('share')}</button>${x.rm?`<button data-rm="${id}" aria-label="Hapus dari playlist">${ic('x')}</button>`:''}${x.allow_download?`<button data-dl="${id}" aria-label="Unduh">${ic('dl')}</button>`:''}</div></div><button class="play" data-play="${id}" aria-label="Putar ${esc(x.title)}"><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></button></div>`}
 const list=(a,t,d,rk)=>a.length?a.map((x,i)=>trackHTML(x,rk?i+1:0)).join(''):`<div class="empty"><b>${t||'Belum ada lagu'}</b>${d||'Jadilah yang pertama mengunggah musik AI.'}<br><br><button class="btn red" data-tab-go="${t?'explore':'create'}">${t?'Jelajahi lagu':'Unggah lagu'}</button></div>`;
 const SRCH='<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
 const bigMsg=f=>`File terlalu besar (${(f.size/MB).toFixed(1)} MB). Maksimal 10 MB per lagu. Kompres atau ekspor ulang dengan bitrate lebih rendah.`;
 
 const SEL='id,title,genre,mood,cover_path,audio_path,allow_download,play_count,creator_id,profiles(display_name,avatar_url),song_likes(count)';
 const norm=s=>(s.likes=s.song_likes?.[0]?.count||0,s);
-let myLikes=new Set(),mySaves=new Set(),lib=[],chartIds=[],cid=null,prevTab='home';
+let myLikes=new Set(),mySaves=new Set(),lib=[],chartIds=[],cid=null,prevTab='home',myFollows=new Set(),pid=null,plMap={},queue=[];
 async function fetchSongs(){if(!sb)return;
- const[a,l,v]=await Promise.all([sb.from('songs').select(SEL).eq('status','published').eq('visibility','public').order('created_at',{ascending:false}).limit(60),
-  sb.from('song_likes').select('song_id').eq('user_id',user?.id),sb.from('song_saves').select('song_id').eq('user_id',user?.id)]);
- songs=(a.data||[]).map(norm);myLikes=new Set((l.data||[]).map(r=>r.song_id));mySaves=new Set((v.data||[]).map(r=>r.song_id));
+ const[a,l,v,f]=await Promise.all([sb.from('songs').select(SEL).eq('status','published').eq('visibility','public').order('created_at',{ascending:false}).limit(60),
+  sb.from('song_likes').select('song_id').eq('user_id',user?.id),sb.from('song_saves').select('song_id').eq('user_id',user?.id),sb.from('follows').select('following_id').eq('follower_id',user?.id)]);
+ songs=(a.data||[]).map(norm);myLikes=new Set((l.data||[]).map(r=>r.song_id));mySaves=new Set((v.data||[]).map(r=>r.song_id));myFollows=new Set((f.data||[]).map(r=>r.following_id));
  const c=await sb.rpc('weekly_chart',{p_limit:20});chartIds=(c.data||[]).map(r=>r.song_id);
  const miss=chartIds.filter(i=>!songs.find(x=>x.id===i));
  if(miss.length){const m=await sb.from('songs').select(SEL).in('id',miss);(m.data||[]).forEach(x=>songs.push(norm(x)))}
@@ -232,7 +235,7 @@ async function dlSong(id){const s=songs.find(x=>x.id===id);if(!s||!s.allow_downl
  try{const r=await fetch(pub('audio',s.audio_path));if(!r.ok)throw 0;const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());
   a.download=`${s.title.replace(/[\\/:*?"<>|]/g,'')}.${s.audio_path.split('.').pop()}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   sb.from('song_downloads').insert({song_id:id,user_id:user.id}).then(()=>{},()=>{});toast('Unduhan dimulai')}catch(e){toast('Gagal mengunduh. Coba lagi.')}}
-function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playSong(b.dataset.play));$$('[data-cr]').forEach(b=>b.onclick=()=>openCreator(b.dataset.cr));$$('[data-like]').forEach(b=>b.onclick=()=>toggle('like',b.dataset.like));$$('[data-save]').forEach(b=>b.onclick=()=>toggle('save',b.dataset.save));$$('[data-share]').forEach(b=>b.onclick=()=>shareSong(b.dataset.share));$$('[data-dl]').forEach(b=>b.onclick=()=>dlSong(b.dataset.dl));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
+function bindList(){$$('[data-play]').forEach(b=>b.onclick=()=>playFrom(b));$$('[data-pl]').forEach(b=>b.onclick=()=>openAdd(b.dataset.pl));$$('[data-rm]').forEach(b=>b.onclick=async()=>{const r=await sb.from('playlist_songs').delete().eq('playlist_id',pid).eq('song_id',b.dataset.rm);if(r.error)return toast('Gagal menghapus');b.closest('.trk').remove();toast('Dihapus dari playlist')});$$('[data-cr]').forEach(b=>b.onclick=()=>openCreator(b.dataset.cr));$$('[data-like]').forEach(b=>b.onclick=()=>toggle('like',b.dataset.like));$$('[data-save]').forEach(b=>b.onclick=()=>toggle('save',b.dataset.save));$$('[data-share]').forEach(b=>b.onclick=()=>shareSong(b.dataset.share));$$('[data-dl]').forEach(b=>b.onclick=()=>dlSong(b.dataset.dl));$$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
 function showRes(){const q=query.toLowerCase(),a=songs.filter(s=>(genre==='Semua'||s.genre===genre)&&(!q||[s.title,s.genre,s.mood,s.profiles?.display_name].some(v=>(v||'').toLowerCase().includes(q))));$('#res').innerHTML=list(a);bindList()}
 
 function render(){const v=$('#view');
@@ -241,7 +244,7 @@ function render(){const v=$('#view');
  <div class="hero"><div><small>WELCOME TO</small><h1>LAVEENA</h1><p>Discover. Create. Share.<br>The AI Music Community</p><button class="btn red" data-tab-go="explore">Jelajahi Sekarang</button></div><img src="/logo-mark.png" alt=""></div>
  <div class="cats">${CATS.map(c=>`<button class="cat${c[0]===mode?' on':''}"><span><svg viewBox="0 0 24 24">${I[c[1]]}</svg></span>${c[0]}</button>`).join('')}</div>
  <div class="sh"><h2>${mode==='New'?'Lagu Terbaru':mode==='Trending'?'Chart Mingguan':'Terpopuler'}</h2><button class="link" data-tab-go="explore">Lihat semua</button></div>${list(a.slice(0,10),null,null,mode==='Trending'&&chartIds.length>0)}`;
-  $$('.cat').forEach((b,i)=>b.onclick=()=>{if(i===5)return setTab('explore');if(i>2)return toast('Segera hadir');mode=CATS[i][0];render()});
+  $$('.cat').forEach((b,i)=>b.onclick=()=>{if(i===3)return setTab('creators');if(i===4)return setTab('playlists');if(i===5)return setTab('explore');mode=CATS[i][0];render()});
   $('#q').onfocus=()=>setTab('explore');bindList()}
  else if(tab==='explore'){
   v.innerHTML=`<label class="search">${SRCH}<input id="q" value="${esc(query)}" placeholder="Cari lagu, artis, atau kreator..." aria-label="Cari"></label><div class="cats" style="margin-top:14px">${['Semua',...GEN].map(g=>`<button class="gc${g===genre?' on':''}" data-g="${g}">${g}</button>`).join('')}</div><div id="res"></div>`;
@@ -264,8 +267,16 @@ function render(){const v=$('#view');
    if(f.size>MAX_COVER){$('#cerr').textContent='Sampul terlalu besar. Maksimal 2 MB.';toast('Sampul melebihi 2 MB',4500);e.target.value='';$('#cn').textContent='Pilih sampul (opsional)';$('#cl').classList.remove('has');return}
    $('#cerr').textContent='';$('#cn').textContent=f.name;$('#cl').classList.add('has')};
   $('#bSong').onclick=e=>busy(e.currentTarget,submitSong)}
- else if(tab==='library'){v.innerHTML=`<h2 style="margin:22px 0 4px;font-size:22px">Koleksi</h2><div id="res"></div>`;
+ else if(tab==='library'){v.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin:22px 0 4px"><h2 style="font-size:22px">Koleksi</h2><button class="link" data-tab-go="playlists">Playlist →</button></div><div id="res"></div>`;
   loadLib().then(()=>{if(tab==='library'){$('#res').innerHTML=list(lib,'Koleksi kosong','Ketuk ikon simpan pada lagu untuk menambahkannya di sini.');bindList()}})}
+ else if(tab==='creators'){v.innerHTML=`<h2 style="margin:22px 0 4px;font-size:22px">Creators</h2><div id="res"><div class="empty">Memuat...</div></div>`;
+  sb.from('profiles').select('id,username,display_name,avatar_url,songs(count)').limit(60).then(({data})=>{if(tab!=='creators')return;
+   const a=(data||[]).map(p=>({...p,n:p.songs?.[0]?.count||0})).filter(p=>p.n>0).sort((x,y)=>y.n-x.n);
+   $('#res').innerHTML=a.length?a.map(p=>`<div class="trk" style="align-items:center"><button class="cr" data-cr="${p.id}" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">${avHTML(p.avatar_url,p.display_name,56)}<span class="ti"><b>${esc(p.display_name)}</b><em>@${esc(p.username)} · ${p.n} lagu</em></span></button>${p.id===user.id?'':`<button class="btn ${myFollows.has(p.id)?'out':'red'}" data-fol="${p.id}" style="width:auto;height:38px;padding:0 16px;margin:0;font-size:13px">${myFollows.has(p.id)?'Mengikuti':'Ikuti'}</button>`}</div>`).join(''):'<div class="empty"><b>Belum ada kreator</b></div>';
+   bindList();$$('[data-fol]').forEach(b=>b.onclick=()=>toggleFollow(b.dataset.fol,b))})}
+ else if(tab==='playlists'){v.innerHTML=`<h2 style="margin:22px 0 4px;font-size:22px">Playlist</h2><div class="field"><input id="pnn" maxlength="60" placeholder="Nama playlist baru" aria-label="Nama playlist"></div><button class="btn red" id="pAdd">Buat playlist</button><p class="err" id="perr2" role="alert"></p><div id="res"><div class="empty">Memuat...</div></div>`;
+  $('#pAdd').onclick=e=>busy(e.currentTarget,async()=>{const n=$('#pnn').value.trim();if(!n){$('#perr2').textContent='Isi nama playlist.';return}$('#perr2').textContent='';if(await mkPl(n)){$('#pnn').value='';loadPls()}});loadPls()}
+ else if(tab==='playlist'){v.innerHTML=`<div id="ph"></div><div id="res"><div class="empty">Memuat...</div></div>`;loadPl()}
  else if(tab==='profile'||tab==='creator'){
   v.innerHTML=`<div id="ph"><div class="empty">Memuat...</div></div><div id="res"></div>`;loadCreator(tab==='profile'?user.id:cid,tab==='profile')}
  $$('[data-tab-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.tabGo))}
@@ -273,14 +284,14 @@ const avUrl=p=>!p?'':p.startsWith('http')?p:pub('avatars',p);
 const avHTML=(p,n,z)=>p?`<img class="avi" style="width:${z}px;height:${z}px" src="${esc(avUrl(p))}" alt="">`:`<span class="avi" style="width:${z}px;height:${z}px;font-size:${z/2.5}px">${esc((n||'?')[0].toUpperCase())}</span>`;
 function openCreator(id){if(user&&id===user.id)return setTab('profile');prevTab=tab==='creator'?prevTab:tab;cid=id;setTab('creator')}
 async function loadCreator(id,self){
- const[p,s]=await Promise.all([sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',id).maybeSingle(),sb.from('songs').select(SEL).eq('creator_id',id).order('created_at',{ascending:false})]);
+ const[p,s,fc]=await Promise.all([sb.from('profiles').select('id,username,display_name,avatar_url').eq('id',id).maybeSingle(),sb.from('songs').select(SEL).eq('creator_id',id).order('created_at',{ascending:false}),sb.from('follows').select('*',{count:'exact',head:true}).eq('following_id',id)]);
  if(tab!=='profile'&&tab!=='creator')return;
  const pr=p.data;if(!pr){$('#ph').innerHTML='<div class="empty"><b>Kreator tidak ditemukan</b></div>';return}
  const a=(s.data||[]).map(norm);a.forEach(x=>{if(!songs.find(y=>y.id===x.id))songs.push(x)});
  const lk=a.reduce((n,x)=>n+x.likes,0);
- $('#ph').innerHTML=`${self?'':'<button class="link" id="bBack" style="margin-top:14px">← Kembali</button>'}<div class="ph">${avHTML(pr.avatar_url,pr.display_name,84)}<h2>${esc(pr.display_name)}</h2><em>@${esc(pr.username)}</em><div class="st"><span><b>${a.length}</b> lagu</span><span><b>${lk}</b> suka</span></div>${self?'<button class="btn out" id="bEdit" style="margin-top:14px">Ubah profil</button><button class="btn" id="bOut" style="color:var(--mute)">Keluar</button>':''}</div><h2 style="font-size:19px;margin:18px 0 0">${self?'Lagu saya':'Lagu'}</h2>`;
+ $('#ph').innerHTML=`${self?'':'<button class="link" id="bBack" style="margin-top:14px">← Kembali</button>'}<div class="ph">${avHTML(pr.avatar_url,pr.display_name,84)}<h2>${esc(pr.display_name)}</h2><em>@${esc(pr.username)}</em><div class="st"><span><b>${a.length}</b> lagu</span><span><b>${lk}</b> suka</span><span><b id="fc">${fc.count||0}</b> pengikut</span></div>${self?'<button class="btn out" id="bEdit" style="margin-top:14px">Ubah profil</button><button class="btn" id="bOut" style="color:var(--mute)">Keluar</button>':`<button class="btn ${myFollows.has(id)?'out':'red'}" id="bFol" style="margin-top:14px">${myFollows.has(id)?'Mengikuti':'Ikuti'}</button>`}</div><h2 style="font-size:19px;margin:18px 0 0">${self?'Lagu saya':'Lagu'}</h2>`;
  $('#res').innerHTML=list(a);bindList();
- if(self){$('#bOut').onclick=logout;$('#bEdit').onclick=()=>editProfile(pr)}else $('#bBack').onclick=()=>setTab(prevTab)}
+ if(self){$('#bOut').onclick=logout;$('#bEdit').onclick=()=>editProfile(pr)}else{$('#bBack').onclick=()=>setTab(prevTab);$('#bFol').onclick=()=>toggleFollow(id,$('#bFol'),$('#fc'))}}
 function editProfile(pr){
  $('#ph').innerHTML=`<h2 style="margin:22px 0 6px;font-size:22px">Ubah Profil</h2><div class="field"><input id="pn" maxlength="40" value="${esc(pr.display_name)}" aria-label="Nama tampilan"></div><label class="field fl" id="pl"><span id="pf">Ganti foto (maks. 2 MB)</span><input type="file" id="pa" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn red" id="pSave">Simpan</button><button class="btn" id="pCancel" style="color:var(--mute)">Batal</button><p class="err" id="perr" role="alert"></p>`;
  $('#res').innerHTML='';
@@ -290,6 +301,34 @@ function editProfile(pr){
   try{let path=pr.avatar_url;if(f){path=`${user.id}/${Date.now()}.${(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')}`;const u=await sb.storage.from('avatars').upload(path,f);if(u.error)throw u.error}
    const r=await sb.from('profiles').update({display_name:n,avatar_url:path,updated_at:new Date().toISOString()}).eq('id',user.id);if(r.error)throw r.error;
    toast('Profil diperbarui');await Promise.all([loadProfile(),fetchSongs()]);render()}catch(x){$('#perr').textContent=msg(x)}})}
+async function toggleFollow(id,b,fc){const on=myFollows.has(id),n=fc?+fc.textContent:0;
+ const set=v=>{v?myFollows.add(id):myFollows.delete(id);b.classList.toggle('out',v);b.classList.toggle('red',!v);b.textContent=v?'Mengikuti':'Ikuti'};
+ set(!on);if(fc)fc.textContent=Math.max(0,n+(on?-1:1));
+ const r=on?await sb.from('follows').delete().eq('follower_id',user.id).eq('following_id',id):await sb.from('follows').insert({follower_id:user.id,following_id:id});
+ if(r.error){set(on);if(fc)fc.textContent=n;toast('Gagal, coba lagi')}}
+const mkPl=async n=>{const r=await sb.from('playlists').insert({owner_id:user.id,name:n}).select('id').single();if(r.error){toast('Gagal membuat playlist');return null}plMap[r.data.id]=n;return r.data.id};
+async function openAdd(id){const s=$('#sheet');
+ s.innerHTML=`<div class="sh2"><b style="font-size:18px">Tambah ke playlist</b><div id="pl" style="margin:8px 0"></div><div class="field"><input id="pnn2" maxlength="60" placeholder="Playlist baru..." aria-label="Nama playlist baru"></div><button class="btn red" id="plNew">Buat dan tambahkan</button><button class="btn" id="plX" style="color:var(--mute)">Tutup</button></div>`;
+ s.style.display='block';const close=()=>s.style.display='none';
+ s.onclick=e=>{if(e.target===s)close()};$('#plX').onclick=close;
+ const add=async pl=>{const r=await sb.from('playlist_songs').insert({playlist_id:pl,song_id:id});close();toast(r.error?(r.error.code==='23505'?'Lagu sudah ada di playlist ini':'Gagal menambahkan'):'Ditambahkan ke playlist')};
+ $('#plNew').onclick=async()=>{const n=$('#pnn2').value.trim();if(!n)return toast('Isi nama playlist');const pl=await mkPl(n);if(pl)add(pl)};
+ const{data}=await sb.from('playlists').select('id,name').eq('owner_id',user.id).order('created_at',{ascending:false});
+ (data||[]).forEach(p=>plMap[p.id]=p.name);
+ $('#pl').innerHTML=(data||[]).length?data.map(p=>`<button class="plr" data-p="${p.id}">${esc(p.name)}</button>`).join(''):'<p class="hint" style="margin:8px 0">Belum ada playlist.</p>';
+ $$('#pl [data-p]').forEach(b=>b.onclick=()=>add(b.dataset.p))}
+async function loadPls(){const{data}=await sb.from('playlists').select('id,name,playlist_songs(count)').eq('owner_id',user.id).order('created_at',{ascending:false});if(tab!=='playlists')return;
+ (data||[]).forEach(p=>plMap[p.id]=p.name);
+ $('#res').innerHTML=(data||[]).length?data.map(p=>`<button class="trk plrow" data-op="${p.id}"><span class="cv" style="background:${grad(p.id)};display:grid;place-items:center"><svg viewBox="0 0 24 24" width="28" height="28" stroke="#fff" fill="none" stroke-width="1.8">${A.pl}</svg></span><span class="ti"><b>${esc(p.name)}</b><em>${p.playlist_songs?.[0]?.count||0} lagu</em></span></button>`).join(''):'<div class="empty"><b>Belum ada playlist</b>Buat playlist pertamamu di atas.</div>';
+ $$('[data-op]').forEach(b=>b.onclick=()=>{pid=b.dataset.op;setTab('playlist')})}
+async function loadPl(){const{data}=await sb.from('playlist_songs').select(`songs(${SEL})`).eq('playlist_id',pid).order('added_at',{ascending:true});if(tab!=='playlist')return;
+ const a=(data||[]).map(r=>r.songs).filter(Boolean).map(norm).map(s=>({...s,rm:1}));a.forEach(x=>{if(!songs.find(y=>y.id===x.id))songs.push(x)});
+ $('#ph').innerHTML=`<button class="link" id="bBk" style="margin-top:14px">← Playlist</button><h2 style="font-size:22px;margin:10px 0 2px">${esc(plMap[pid]||'Playlist')}</h2><em style="color:var(--mute);font-style:normal;font-size:13px">${a.length} lagu</em><button class="btn out" id="bDel" style="margin-top:12px;height:44px">Hapus playlist</button>`;
+ $('#res').innerHTML=list(a,'Playlist kosong','Tambahkan lagu lewat ikon daftar di tiap lagu.');bindList();
+ $('#bBk').onclick=()=>setTab('playlists');
+ $('#bDel').onclick=async()=>{if(!confirm('Hapus playlist ini?'))return;const r=await sb.from('playlists').delete().eq('id',pid);if(r.error)return toast('Gagal menghapus');toast('Playlist dihapus');setTab('playlists')}}
+const playFrom=b=>{queue=$$('[data-play]').map(x=>x.dataset.play);playSong(b.dataset.play)};
+au.onended=()=>{const i=queue.indexOf(cur&&cur.id),n=queue[i+1];if(i>=0&&n)playSong(n)};
 function setTab(t){tab=t;$$('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render();scrollTo(0,0)}
 
 async function submitSong(){const E=$('#cerr');E.textContent='';
@@ -329,7 +368,7 @@ async function loadProfile(){if(!sb||!user)return;
 async function enter(){await Promise.all([loadProfile(),fetchSongs()]);show('main');
  const sid=new URLSearchParams(location.search).get('lagu'),sg=songs.find(x=>x.id===sid);history.replaceState(null,'',location.pathname);
  if(sg){query=sg.title;genre='Semua';setTab('explore')}else setTab('home')}
-async function logout(){au.pause();cur=null;songs=[];myLikes=new Set();mySaves=new Set();if(sb)await sb.auth.signOut();user=profile=null;show('login')}
+async function logout(){au.pause();cur=null;songs=[];myLikes=new Set();mySaves=new Set();myFollows=new Set();queue=[];if(sb)await sb.auth.signOut();user=profile=null;show('login')}
 
 $$('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 $$('[data-eye]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.eye);i.type=i.type==='password'?'text':'password'});
