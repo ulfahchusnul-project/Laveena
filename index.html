@@ -126,7 +126,7 @@ nav button.on:not([data-tab=home]) svg{fill:none}
 <section id="login" class="screen auth">
   <img class="logo" src="/logo.png" alt="LAVEENA">
   <p class="tag" style="margin:0 auto 34px">Listen · AI · Voice · Exploration ·<br>Expression · Network · Artists</p>
-  <div class="field"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="lid" placeholder="Email atau Username" autocomplete="username" aria-label="Email atau Username"></div>
+  <div class="field"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="lid" type="email" inputmode="email" placeholder="Email" autocomplete="email" autocapitalize="none" aria-label="Email"></div>
   <div class="field"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="lpw" type="password" placeholder="Kata sandi" autocomplete="current-password" aria-label="Kata sandi"><button type="button" data-eye="lpw" aria-label="Tampilkan kata sandi"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <button class="btn red" id="bLogin">Masuk</button>
   <p class="err" id="lerr" role="alert"></p>
@@ -185,7 +185,7 @@ const au=$('#au'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0
 function toast(m,ms){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),ms||2600)}
 function show(id){$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));$('#nav').style.display=id==='main'?'grid':'none';$('#mini').style.display=id==='main'&&cur?'flex':'none';scrollTo(0,0)}
 function msg(e){const m=(e&&e.message||'').toLowerCase();
-  if(m.includes('invalid login'))return'Email/username atau kata sandi salah.';
+  if(m.includes('invalid login'))return'Email atau kata sandi salah.';
   if(m.includes('already registered')||m.includes('duplicate'))return'Email atau username sudah dipakai.';
   if(m.includes('network')||m.includes('fetch'))return'Koneksi bermasalah. Periksa internet Anda lalu coba lagi.';
   if(m.includes('email not confirmed'))return'Email belum dikonfirmasi. Cek kotak masuk Anda.';
@@ -379,9 +379,8 @@ $('#avatar').onclick=()=>setTab('profile');
 $('#bLogin').onclick=e=>busy(e.currentTarget,async()=>{
  $('#lerr').textContent='';if(needCfg('#lerr'))return;
  let id=$('#lid').value.trim(),pw=$('#lpw').value;
- if(!id||!pw){$('#lerr').textContent='Isi email/username dan kata sandi.';return}
- try{if(!id.includes('@')){const{data,error}=await sb.rpc('email_by_username',{p_username:id.toLowerCase()});
-   if(error||!data){$('#lerr').textContent='Username tidak ditemukan.';return}id=data}
+ if(!id||!pw){$('#lerr').textContent='Isi email dan kata sandi.';return}
+ try{if(!id.includes('@')){$('#lerr').textContent='Masuk menggunakan alamat email Anda.';return}
   const{data,error}=await sb.auth.signInWithPassword({email:id,password:pw});
   if(error)throw error;user=data.user;await enter()}catch(x){$('#lerr').textContent=msg(x)}});
 
